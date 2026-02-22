@@ -1,6 +1,5 @@
 .spotify-player-album-card-wrapper {
   position: relative;
-  margin: 1em;
   flex-shrink: 1;
   border-radius: 0.4em;
   overflow: visible;
@@ -10,6 +9,9 @@
   z-index: 1;
   transition: width 0.3s ease, height 0.3s ease, filter 0.3s ease, z-index 0s;
   background: var(--gradient-border, linear-gradient(to right, #000, #333));
+  aspect-ratio: 1/1;
+  width: 100%;
+  max-height: 100%;
 }
 
 /* Snug black border around the card */
@@ -43,25 +45,32 @@
 
 @keyframes pulsate-glow {
   0% {
-    filter: blur(10px);
-    top: -0.20em;
-    left: -0.20em;
-    right: -0.20em;
-    bottom: -0.2em;
+    filter: blur(8px);
+    top: -0.15em;
+    left: -0.15em;
+    right: -0.15em;
+    bottom: -0.15em;
   }
   50% {
-    filter: blur(30px);
-    top: -0.30em;
-    left: -0.30em;
-    right: -0.30em;
-    bottom: -0.3em;
+    filter: blur(18px);
+    top: -0.25em;
+    left: -0.25em;
+    right: -0.25em;
+    bottom: -0.25em;
   }
   100% {
-    filter: blur(10px);
-    top: -0.20em;
-    left: -0.20em;
-    right: -0.20em;
-    bottom: -0.2em;
+    filter: blur(8px);
+    top: -0.15em;
+    left: -0.15em;
+    right: -0.15em;
+    bottom: -0.15em;
+  }
+}
+
+/* When inside a size container, constrain to a square that fits */
+@container (min-width: 0px) {
+  .spotify-player-album-card-wrapper {
+    width: min(100cqi, 100cqb);
   }
 }
 

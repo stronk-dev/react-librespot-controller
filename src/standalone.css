@@ -5,20 +5,24 @@ body {
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   background-color: var(--darkest);
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   user-select: none;
   scrollbar-color: var(--dark) var(--darker);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   width: 100%;
   height: 100%;
   position: absolute;
+  box-sizing: border-box;
 }
 
 body #root {
-  height: unset;
-  padding: 0;
-  overflow-y: auto;
+  height: 100%;
+  padding: 1em;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Kiosk sizing — uses 100% to respect #root padding, not viewport units */
+body #root .kiosk {
+  width: 100%;
+  height: 100%;
 }

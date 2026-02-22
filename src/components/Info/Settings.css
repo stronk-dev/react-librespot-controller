@@ -1,0 +1,135 @@
+.spotify-player-settings {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+
+.spotify-player-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.spotify-player-settings-section-title {
+  font-size: 0.85em;
+  font-weight: bold;
+  color: var(--accent-color);
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid var(--dark);
+}
+
+/* Sleep timer presets */
+.spotify-player-settings-timer-presets {
+  display: flex;
+  gap: 0.4em;
+  flex-wrap: wrap;
+}
+
+.spotify-player-settings-timer-btn {
+  background: var(--dark);
+  color: var(--lightest);
+  border: 1px solid var(--grey);
+  border-radius: 0.3em;
+  padding: 0.35em 0.7em;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.spotify-player-settings-timer-btn:hover {
+  background: var(--grey);
+  transform: scale(1.05);
+}
+
+.spotify-player-settings-timer-btn:active {
+  background: var(--accent-color);
+  color: var(--darkest);
+}
+
+/* Active countdown */
+.spotify-player-settings-timer-active {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+}
+
+.spotify-player-settings-countdown {
+  font-size: 1.4em;
+  font-weight: bold;
+  color: var(--accent-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.spotify-player-settings-timer-cancel {
+  background: none;
+  border: 1px solid var(--red);
+  color: var(--red);
+  border-radius: 0.3em;
+  padding: 0.3em 0.6em;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.spotify-player-settings-timer-cancel:hover {
+  background: var(--red);
+  color: var(--darkest);
+}
+
+/* Theme list */
+.spotify-player-settings-theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.spotify-player-settings-theme-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.35em 0.5em;
+  border-radius: 0.3em;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.spotify-player-settings-theme-item:hover {
+  background-color: var(--dark);
+}
+
+.spotify-player-settings-theme-item.active {
+  background-color: var(--dark);
+  outline: 1px solid var(--accent-color);
+}
+
+.spotify-player-settings-theme-swatches {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.spotify-player-settings-theme-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.spotify-player-settings-theme-name {
+  font-size: 0.8em;
+  color: var(--lightest);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

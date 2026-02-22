@@ -11,8 +11,10 @@
   max-width: 500px;
 }
 
-.spotify-player-widescreen-layout .spotify-player-seek-container {
+.spotify-player-widescreen-layout .spotify-player-seek-container,
+.spotify-player-footer .spotify-player-seek-container {
   flex: 1;
+  max-width: none;
 }
 
 .spotify-player-seek-container span {

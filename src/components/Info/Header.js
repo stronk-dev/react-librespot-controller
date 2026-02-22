@@ -1,4 +1,3 @@
-// Displays a header with the client device name and an icon depending on device type
 import React from "react";
 import {
   GiCompactDisc,
@@ -18,11 +17,13 @@ import {
   FaChromecast,
   FaExclamationCircle,
   FaInfoCircle,
+  FaListOl,
+  FaArrowLeft,
+  FaCog,
 } from "react-icons/fa";
 import { MdWatch } from "react-icons/md";
 import "./Header.css";
 
-// Mapping from device type to which Icon we should render
 const deviceIcons = {
   computer: GiLaptop,
   tablet: FaTabletAlt,
@@ -43,9 +44,6 @@ const deviceIcons = {
   home_thing: GiRadioTower,
 };
 
-// TODO: expand with settings button
-// TODO: expand with playlists/albums/explore button once we can get albums/playlists from the API
-// TODO: add more comments, IE for props
 const Header = ({
   isConnected,
   deviceName,
@@ -54,13 +52,27 @@ const Header = ({
   isStopped,
   activeTab,
   setActiveTab,
+  navStack,
+  onBack,
+  sleepTimerEnd,
 }) => {
   const Icon = isStopped
     ? GiNightSleep
     : deviceIcons[deviceType?.toLowerCase()] || FaQuestionCircle;
 
+  const hasNav = navStack && navStack.length > 0;
+  const hasSleepTimer = sleepTimerEnd && sleepTimerEnd > Date.now();
+
   return (
     <div className="spotify-player-header">
+      <button
+        className={`spotify-player-back-button ${hasNav ? "spotify-player-back-visible" : "spotify-player-back-hidden"}`}
+        onClick={onBack}
+        title="Back"
+        tabIndex={hasNav ? 0 : -1}
+      >
+        <FaArrowLeft />
+      </button>
       <div className="spotify-player-device-title">
         {isConnected ? (
           <Icon
@@ -77,19 +89,30 @@ const Header = ({
       </div>
       <div className="spotify-player-tabs">
         <button
-          className={`spotify-player-tab ${activeTab === "Info" ? "spotify-player-tab-active" : ""
-            }`}
+          className={`spotify-player-tab ${activeTab === "Info" ? "spotify-player-tab-active" : ""}`}
           onClick={() => setActiveTab("Info")}
         >
           <FaInfoCircle />
         </button>
         <button
-          className={`spotify-player-tab ${activeTab === "Playlists" ? "spotify-player-tab-active" : ""
-            }`}
+          className={`spotify-player-tab ${activeTab === "Playlists" ? "spotify-player-tab-active" : ""}`}
           onClick={() => setActiveTab("Playlists")}
           disabled={!isConnected}
         >
           <FaMusic />
+        </button>
+        <button
+          className={`spotify-player-tab ${activeTab === "Queue" ? "spotify-player-tab-active" : ""}`}
+          onClick={() => setActiveTab("Queue")}
+          disabled={!isConnected || isStopped}
+        >
+          <FaListOl />
+        </button>
+        <button
+          className={`spotify-player-tab ${activeTab === "Settings" ? "spotify-player-tab-active" : ""} ${hasSleepTimer ? "spotify-player-tab-badge" : ""}`}
+          onClick={() => setActiveTab("Settings")}
+        >
+          <FaCog />
         </button>
       </div>
     </div>

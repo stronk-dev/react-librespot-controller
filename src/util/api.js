@@ -2,14 +2,12 @@
 
 /**
  * Generic API call function with error handling.
- * @param {string} url - The API endpoint to call.
- * @param {object} options - Fetch options (method, headers, body, etc.).
- * @param {any} defaultReturnValue - The default return value on failure (default: {}).
- * @returns {Promise<any>} - The API response or default value.
+ * Returns null for 204 (no active session).
  */
-const callApi = async (url, options = {}, defaultReturnValue = {}) => {
+const callApi = async (url, options = {}, defaultReturnValue = null) => {
   try {
     const response = await fetch(url, options);
+    if (response.status === 204) return null;
     if (!response.ok) {
       console.error(`API call failed: ${response.status} ${response.statusText}`);
       return defaultReturnValue;
@@ -21,17 +19,38 @@ const callApi = async (url, options = {}, defaultReturnValue = {}) => {
   }
 };
 
-// Not sure what this is for, maybe for health checking?
-export const checkAPI = async (baseUrl) => {
-  const response = await callApi(`${baseUrl}/`, {}, {});
+const jsonOrNull = async (responsePromise) => {
+  const response = await responsePromise;
+  if (!response || !response.json) return null;
   return response.json();
-}
+};
 
-// Gets the entire status JSON blob. Also initializes apiBaseUrl
-export const getStatus = async (baseUrl) => {
-  const response = await callApi(`${baseUrl}/status`, {}, {});
-  return response.json();
-}
+export const extractIdFromUri = (uri) => uri?.split(':').pop();
+
+/** Rewrite broken Spotify CDN URLs to publicly-resolvable i.scdn.co.
+ *  Also resolves relative paths (e.g. /metadata/playlist/.../image) against baseUrl. */
+export const normalizeImageUrl = (url, baseUrl) => {
+  if (!url) return null;
+  // Relative path from backend (e.g. /metadata/playlist/{id}/image?size=300)
+  if (url.startsWith("/") && baseUrl) return `${baseUrl}${url}`;
+  // u.scdn.co (internal, doesn't resolve externally) → i.scdn.co (public)
+  const uScdn = url.match(/u\.scdn\.co\/images\/.*?\/([a-fA-F0-9]{40})$/);
+  if (uScdn) return `https://i.scdn.co/image/${uScdn[1].toLowerCase()}`;
+  // spotify:image:{hex} URI → https URL
+  const imageUri = url.match(/^spotify:image:([a-fA-F0-9]{40})$/i);
+  if (imageUri) return `https://i.scdn.co/image/${imageUri[1].toLowerCase()}`;
+  // Bare 40-char hex ID
+  if (/^[a-fA-F0-9]{40}$/.test(url)) return `https://i.scdn.co/image/${url.toLowerCase()}`;
+  return url;
+};
+
+// Health check
+export const checkAPI = async (baseUrl) =>
+  jsonOrNull(callApi(`${baseUrl}/`));
+
+// Gets the entire status JSON blob
+export const getStatus = async (baseUrl) =>
+  jsonOrNull(callApi(`${baseUrl}/status`));
 
 /**
  * Player Controls
@@ -78,10 +97,8 @@ export const seek = async (baseUrl, position, relative = false) =>
  * Volume Controls
  */
 
-export const getVolume = async (baseUrl) => {
-  const response = await callApi(`${baseUrl}/player/volume`, {}, {});
-  return response.json();
-}
+export const getVolume = async (baseUrl) =>
+  jsonOrNull(callApi(`${baseUrl}/player/volume`));
 
 export const setVolume = async (baseUrl, volume, relative = false) =>
   await callApi(`${baseUrl}/player/volume`, {
@@ -126,17 +143,53 @@ export const addToQueue = async (baseUrl, uri) =>
     body: JSON.stringify({ uri }),
   });
 
+export const getQueue = async (baseUrl) =>
+  jsonOrNull(callApi(`${baseUrl}/player/queue`));
+
 /**
- * Passthrough API to Spotify
+ * Radio
  */
 
-export const getPlaylists = async (baseUrl) => {
-  const response = await callApi(`${baseUrl}/web-api/v1/me/playlists?limit=50&offset=0`, {
-    method: "GET",
+export const startRadio = async (baseUrl, seedUri) =>
+  await callApi(`${baseUrl}/player/radio`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seed_uri: seedUri }),
   });
-  return response.json();
-}
 
+/**
+ * Native Metadata API (no web API rate limits)
+ */
+
+export const getRootlist = async (baseUrl, limit, offset) => {
+  let url = `${baseUrl}/metadata/rootlist`;
+  if (limit != null) url += `?limit=${limit}&offset=${offset || 0}`;
+  return jsonOrNull(callApi(url));
+};
+
+export const getPlaylistDetails = async (baseUrl, id, limit = 50, offset = 0) =>
+  jsonOrNull(callApi(`${baseUrl}/metadata/playlist/${id}?limit=${limit}&offset=${offset}`));
+
+export const getTrackDetails = async (baseUrl, id) =>
+  jsonOrNull(callApi(`${baseUrl}/metadata/track/${id}`));
+
+export const getAlbumDetails = async (baseUrl, id) =>
+  jsonOrNull(callApi(`${baseUrl}/metadata/album/${id}`));
+
+export const getArtistDetails = async (baseUrl, id) =>
+  jsonOrNull(callApi(`${baseUrl}/metadata/artist/${id}`));
+
+export const getShowDetails = async (baseUrl, id) =>
+  jsonOrNull(callApi(`${baseUrl}/metadata/show/${id}`));
+
+export const getEpisodeDetails = async (baseUrl, id) =>
+  jsonOrNull(callApi(`${baseUrl}/metadata/episode/${id}`));
+
+export const getCollection = async (baseUrl) =>
+  jsonOrNull(callApi(`${baseUrl}/metadata/collection`));
+
+export const getContext = async (baseUrl, uri) =>
+  jsonOrNull(callApi(`${baseUrl}/context/${encodeURIComponent(uri)}`));
 
 const exports = {
   checkAPI,
@@ -154,6 +207,18 @@ const exports = {
   toggleRepeatTrack,
   toggleShuffleContext,
   addToQueue,
-  getPlaylists,
+  getQueue,
+  startRadio,
+  getRootlist,
+  getPlaylistDetails,
+  getTrackDetails,
+  getAlbumDetails,
+  getArtistDetails,
+  getShowDetails,
+  getEpisodeDetails,
+  getCollection,
+  getContext,
+  extractIdFromUri,
+  normalizeImageUrl,
 };
 export default exports;

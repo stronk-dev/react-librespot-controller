@@ -4,13 +4,14 @@
 .spotify-player-playback-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 0.4em;
   background: var(--button-background);
   border-radius: 0.4em;
-  padding-left: 0.4em;
-  padding-right: 0.4em;
-  max-width: 500px;
+  padding: 0.4em;
   flex: 1;
+  min-width: 0;
 }
 
 /* Media button styling */
@@ -25,8 +26,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 36px;
-  width: 36px;
+  min-height: 36px;
+  min-width: 36px;
   font-size: 1.5rem;
   background: var(--button-background);
   color: var(--darkest);
@@ -50,6 +51,12 @@
   cursor: not-allowed;
 }
 
+.spotify-player-control-small {
+  font-size: 1rem;
+  width: 28px;
+  height: 28px;
+}
+
 /* Toggle button styling */
 
 .spotify-player-toggle-container {
@@ -65,7 +72,7 @@
   position: relative;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 0.4em;
+  flex-shrink: 1;
 }
 
 .spotify-player-toggle-container:hover {
@@ -110,7 +117,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  flex: 1;
+  flex-shrink: 0;
 }
 
 .spotify-player-toggle-thumb.disabled {

@@ -1,6 +1,6 @@
 // Hook to handle the connection and state for a go-librespot client.
 import { useState, useEffect, useRef, useCallback } from "react";
-import useWebSocket from "./useWebSocket";
+import useWebSocket from "./useWebSocket.js";
 import {
   getStatus,
   resume,
@@ -11,31 +11,53 @@ import {
   nextTrack,
   setVolume,
   toggleShuffleContext,
-  getPlaylists
-} from "../util/api";
+  getRootlist,
+  getQueue,
+} from "../util/api.js";
 
-// TODO: add more comments, IE for props
+const PLAYLIST_PAGE_SIZE = 50;
+
 const useLibrespot = (websocketUrl, apiBaseUrl) => {
-  const [status, setStatus] = useState(null); //< Remote long term, contains entire response of getStatus call.
-  const [trackInfo, setTrack] = useState(null); //< Track details
-  const [playlists, setPlaylists] = useState(null); //< Playlist details
-  const [remotePosition, setRemotePosition] = useState(0); //< Spotify last known playback position
-  const [remoteVolume, setRemoteVolume] = useState(0); //< Spotify last known volume level
-  const [maxVolume, setMaxVolume] = useState(100); //< Spotify last known max volume (steps)
-  const [isPlaying, setIsPlaying] = useState(false); //< Spotify client is playing back music
-  const [isStopped, setIsStopped] = useState(false); //< Spotify client is in a stopped state - requires starting playback from an official client until the API supports getting and initializing playback of playlists.
-  const [shuffleContext, setShuffleContext] = useState(false); //< Shuffle is enabled - no smart shuffle support in the API yet
-  const playerRef = useRef(null); //< Ref to parent component - used to determine it's dimensions for auto-layout
+  const [status, setStatus] = useState(null);
+  const [trackInfo, setTrack] = useState(null);
+  const [playlists, setPlaylists] = useState(null);
+  const [queue, setQueue] = useState(null);
+  const [contextUri, _setContextUri] = useState(() => {
+    try { return sessionStorage.getItem("spotify_context_uri") || null; } catch { return null; }
+  });
+  const setContextUri = useCallback((uri) => {
+    _setContextUri(uri);
+    try { if (uri) sessionStorage.setItem("spotify_context_uri", uri); } catch {}
+  }, []);
+  const [remotePosition, setRemotePosition] = useState(0);
+  const [remoteVolume, setRemoteVolume] = useState(0);
+  const [maxVolume, setMaxVolume] = useState(100);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isStopped, setIsStopped] = useState(false);
+  const [shuffleContext, setShuffleContext] = useState(false);
+  const [sleepTimerEnd, setSleepTimerEnd] = useState(null);
+  const sleepTimerRef = useRef(null);
+  const playerRef = useRef(null);
+  const playlistsRef = useRef([]);
+  const playlistsTotalRef = useRef(null);
+  const playlistsLoadingRef = useRef(false);
+
+  const refetchQueue = useCallback(() => {
+    getQueue(apiBaseUrl).then(data => { if (data) setQueue(data); });
+  }, [apiBaseUrl]);
 
   const eventHandler = useCallback((event) => {
     switch (event.type) {
       case "metadata":
         setTrack(event.data);
-        setRemotePosition(0);
+        setRemotePosition(event.data.position || 0);
+        refetchQueue();
         break;
       case "playing":
         setIsPlaying(true);
         setIsStopped(false);
+        if (event.data?.context_uri) setContextUri(event.data.context_uri);
+        refetchQueue();
         break;
       case "paused":
         setIsPlaying(false);
@@ -55,110 +77,134 @@ const useLibrespot = (websocketUrl, apiBaseUrl) => {
       case "shuffle_context":
         setShuffleContext(event.data.value);
         break;
+      case "queue":
+        setQueue(event.data);
+        break;
+      case "context":
+        if (event.data?.context_uri) setContextUri(event.data.context_uri);
+        break;
       default:
         break;
     }
-  }, []);
+  }, [refetchQueue]);
 
-  // Handler for WebSocket messages
   const { isConnected, error } = useWebSocket(websocketUrl, eventHandler);
 
-  // (Re)load on initial render or whenever the API endpoint changes.
   useEffect(() => {
     const fetchStatus = async () => {
-      console.log("Refreshing state");
       const data = await getStatus(apiBaseUrl);
-      const isStopped = data.stopped || !data.play_origin.length || data.track == null;
-      setStatus(data); //< TODO: remove long term.
+      if (!data) return;
+      const stopped = data.stopped || !data.play_origin?.length || data.track == null;
+      setStatus(data);
       setTrack(data.track);
       setRemoteVolume(data.volume);
       setMaxVolume(data.volume_steps);
-      setIsPlaying(!data.paused && !isStopped);
-      setIsStopped(isStopped);
+      setIsPlaying(!data.paused && !stopped);
+      setIsStopped(stopped);
       setShuffleContext(data.shuffle_context);
       setRemotePosition(data.track?.position || 0);
     };
     const fetchPlaylists = async () => {
-      console.log("Refreshing playlists");
-      const data = await getPlaylists(apiBaseUrl);
-      console.log("Retrieve %i out of %i playlists", data.items.length, data.total)
-      setPlaylists(data.items);
+      playlistsLoadingRef.current = true;
+      const data = await getRootlist(apiBaseUrl, PLAYLIST_PAGE_SIZE, 0);
+      playlistsLoadingRef.current = false;
+      if (!data) return;
+      const items = data.playlists || [];
+      playlistsRef.current = items;
+      playlistsTotalRef.current = data.total ?? null;
+      setPlaylists(items);
     };
-    // Refresh state on each (re)connect
-    if (isConnected){
+    const fetchQueue = async () => {
+      const data = await getQueue(apiBaseUrl);
+      if (data) setQueue(data);
+    };
+    if (isConnected) {
       fetchStatus();
       fetchPlaylists();
+      fetchQueue();
     }
   }, [apiBaseUrl, isConnected]);
 
-  // Call pause or resume depending on the current state of the player
   const handlePlayPause = () => {
-    if (!isConnected || isStopped) {
-      console.error("Unable to play/pause, as the player is inactive.");
-      return;
-    }
+    if (!isConnected || isStopped) return;
     isPlaying ? pause(apiBaseUrl) : resume(apiBaseUrl);
   };
 
-  // Simply calls the previous track API call
   const handlePrevTrack = () => {
-    if (!isPlaying || isStopped) {
-      console.error("Unable to skip back, as the player is inactive.");
-      return;
-    }
-    if (!isPlaying) {
-      resume(apiBaseUrl);
-    }
+    if (!isPlaying || isStopped) return;
     previousTrack(apiBaseUrl);
   };
 
-  // Skips to the next track by seeking to the end of the track
   const handleNextTrack = () => {
-    if (!trackInfo || isStopped) {
-      console.error("Unable to skip track, as the player is inactive.");
-      return;
-    }
+    if (!trackInfo || isStopped) return;
     nextTrack(apiBaseUrl);
   };
 
-  // 
   const handlePlay = (uri) => {
-    const payload = {
-      uri,
-      // skip_to_uri: uri,
-      paused: false
-    }
-    play(apiBaseUrl, payload);
+    play(apiBaseUrl, { uri, paused: false });
   };
 
-  // Seeks to a % of the current duration.
+  const handlePlayFromContext = (contextUriArg, skipToUri) => {
+    play(apiBaseUrl, { uri: contextUriArg, skip_to_uri: skipToUri, paused: false });
+  };
+
   const handleSeek = (event) => {
-    if (!trackInfo || isStopped) {
-      console.error("Unable to seek, as the player is inactive.");
-      return;
-    }
+    if (!trackInfo || isStopped) return;
     const seekTo = (event.target.value / 100) * trackInfo.duration;
     seek(apiBaseUrl, Math.floor(seekTo));
   };
 
-  // Seeks to a % of the max volume
   const handleVolumeChange = (event) => {
-    if (!isPlaying || isStopped) {
-      console.error("Unable to modify volume, as the player is inactive.");
-      return;
-    }
+    if (!isPlaying || isStopped) return;
     const newVolume = (event.target.value / 100) * maxVolume;
     setVolume(apiBaseUrl, Math.round(newVolume));
   };
 
-  // Toggles shuffle mode
   const toggleShuffle = () => {
-    if (!isPlaying || isStopped) {
-      console.error("Unable to toggle shuffle mode, as the player is inactive.");
-      return;
-    }
+    if (!isPlaying || isStopped) return;
     toggleShuffleContext(apiBaseUrl, !shuffleContext);
   };
+
+  const loadMorePlaylists = useCallback(async () => {
+    if (playlistsLoadingRef.current) return;
+    if (playlistsTotalRef.current == null) return;
+    if (playlistsRef.current.length >= playlistsTotalRef.current) return;
+
+    playlistsLoadingRef.current = true;
+    const data = await getRootlist(apiBaseUrl, PLAYLIST_PAGE_SIZE, playlistsRef.current.length);
+    playlistsLoadingRef.current = false;
+    if (!data || !data.playlists?.length) return;
+
+    const merged = [...playlistsRef.current, ...data.playlists];
+    playlistsRef.current = merged;
+    if (data.total != null) playlistsTotalRef.current = data.total;
+    setPlaylists(merged);
+  }, [apiBaseUrl]);
+
+  // Sleep timer
+  const setSleepTimer = useCallback((minutes) => {
+    if (sleepTimerRef.current) {
+      clearTimeout(sleepTimerRef.current);
+      sleepTimerRef.current = null;
+    }
+    if (!minutes || minutes <= 0) {
+      setSleepTimerEnd(null);
+      return;
+    }
+    const end = Date.now() + minutes * 60 * 1000;
+    setSleepTimerEnd(end);
+    sleepTimerRef.current = setTimeout(() => {
+      pause(apiBaseUrl);
+      setSleepTimerEnd(null);
+      sleepTimerRef.current = null;
+    }, minutes * 60 * 1000);
+  }, [apiBaseUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (sleepTimerRef.current) clearTimeout(sleepTimerRef.current);
+    };
+  }, []);
 
   return {
     playerRef,
@@ -172,6 +218,7 @@ const useLibrespot = (websocketUrl, apiBaseUrl) => {
     shuffleContext,
     handlePlay,
     handlePlayPause,
+    handlePlayFromContext,
     handlePrevTrack,
     handleNextTrack,
     handleSeek,
@@ -180,6 +227,12 @@ const useLibrespot = (websocketUrl, apiBaseUrl) => {
     isConnected,
     error,
     playlists,
+    queue,
+    contextUri,
+    sleepTimerEnd,
+    setSleepTimer,
+    loadMorePlaylists,
+    apiBaseUrl,
   };
 };
 

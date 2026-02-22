@@ -1,54 +1,44 @@
 
 /* General player styles */
 .spotify-player-spotify-card {
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  aspect-ratio: var(--spotify-player-aspect-ratio, 1.45);
+  min-width: 0;
+  min-height: 0;
+  max-height: var(--spotify-player-max-height, 100vh);
+  box-sizing: border-box;
   gap: 0.8em;
   background-color: var(--darker);
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   margin: 0 auto;
   border: 1px solid var(--dark);
   border-radius: 0.3em;
   position: relative;
   padding: 1.2em;
   z-index: 1;
-  overflow: visible;
+  overflow: hidden;
+  contain: layout paint style;
   box-shadow: rgba(40, 44, 52, 0.5) 2px 4px 6px 2px;
 }
 
 .kiosk {
-  height: 100vh;
-  width: 100vw;
-}
-
-.spotify-player-info-container {
   height: 100%;
+  aspect-ratio: auto;
+  max-height: none;
 }
 
-.spotify-player-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.kiosk .spotify-player-playlists-wrapper,
+.kiosk .spotify-player-track-details {
+  max-height: none;
 }
 
-/* Wrapper main contents */
-
-.spotify-player-info-container {
-  display: flex;
-  gap: 1.2em;
-  align-items: center;
-  justify-content: center;
-  transition: width 0.3s ease, height 0.3s ease, filter 0.3s ease, z-index 0s;
-  width: 100%;
-  flex: 1;
-}
-
-/* Default layout */
+/* ===== Default layout ===== */
+/* Card grid: header | info | footer */
 
 .spotify-player-default-layout {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
 }
 
 .spotify-player-default-layout .spotify-player-header {
@@ -59,97 +49,196 @@
   display: flex;
   justify-content: space-evenly;
   gap: 1em;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
+/* Info area: album-art | right-panel, side by side */
 .spotify-player-default-layout .spotify-player-info-container {
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, min(40%, 350px)) minmax(0, 1fr);
+  gap: 1.2em;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .spotify-player-default-layout .spotify-player-left {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  max-width: 400px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
+/* Right panel: detail column — center album card, stretch browse views */
 .spotify-player-default-layout .spotify-player-right {
-  justify-content: space-between;
-  align-self: stretch;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  place-items: center;
+  padding: 0.5em;
+  container-type: size;
 }
 
-.spotify-player-default-layout .spotify-player-playlist-container {
-  grid-template-rows: repeat(3, minmax(50px, auto));
-  grid-auto-flow: column;
+.spotify-player-default-layout .spotify-player-right > .spotify-player-track-details {
+  place-self: stretch;
+  width: 100%;
 }
 
-/* Portrait layout */
+/* Kiosk default: better proportions on large screens */
+.kiosk.spotify-player-default-layout .spotify-player-info-container {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+/* ===== Portrait layout ===== */
+/* Card grid: header | info */
 
 .spotify-player-portrait-layout {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* Info area grid: main | seek | media | volume */
+.spotify-player-portrait-layout .spotify-player-info-container {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  gap: 0.5em;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Main area: optional album + content, flex column */
+.spotify-player-portrait-main {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0.5em;
 }
 
-.spotify-player-portrait-layout .spotify-player-info-container {
-  flex-direction: column;
-  align-items: stretch;
+.spotify-player-portrait-main > .spotify-player-playlists-wrapper,
+.spotify-player-portrait-main > .spotify-player-track-details,
+.spotify-player-portrait-main > .spotify-player-settings {
+  flex: 1;
+  min-height: 0;
 }
 
-.spotify-player-portrait-layout .spotify-player-bottom {
-  order: 1;
-  max-width: 300px;
+/* Portrait controls: let seek & volume fill available width */
+.spotify-player-portrait-layout .spotify-player-seek-container,
+.spotify-player-portrait-layout .spotify-player-volume-control {
+  max-width: none;
+  flex: 1;
+}
+
+.spotify-player-portrait-album {
+  max-width: min(200px, 30vh);
   align-self: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 0.5em;
 }
 
 .spotify-player-portrait-layout .spotify-player-playlists-wrapper,
 .spotify-player-portrait-layout .spotify-player-track-details {
-  height: 200px;
+  min-height: 120px;
   margin: 0;
-  flex: unset;
 }
 
-.spotify-player-portrait-layout .spotify-player-playlist-container {
-  grid-template-rows: repeat(2, minmax(50px, auto));
-  grid-auto-flow: column;
-}
-
-/* Widescreen layout */
+/* ===== Widescreen layout ===== */
+/* Card is a single-row grid, info-container uses display:contents
+   so left|middle|right become direct grid children */
 
 .spotify-player-widescreen-layout {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(30%, 300px)) auto;
   gap: 1em;
-  justify-content: space-between;
+  min-height: 300px;
+  max-height: 400px;
 }
 
+.spotify-player-widescreen-layout .spotify-player-info-container {
+  display: contents;
+}
+
+/* Middle panel grid: header | master content */
+.spotify-player-widescreen-layout .spotify-player-middle {
+  grid-column: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.4em;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Left panel: detail column — center album card, stretch browse views */
 .spotify-player-widescreen-layout .spotify-player-left {
-  flex: 1;
+  grid-column: 2;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  place-items: center;
+  padding: 0.5em;
+  container-type: size;
+}
+
+.spotify-player-widescreen-layout .spotify-player-left > .spotify-player-track-details {
+  place-self: stretch;
+  width: 100%;
 }
 
 .spotify-player-widescreen-layout .spotify-player-right {
-  gap: 0;
-  align-self: stretch;
-}
-
-.spotify-player-widescreen-layout .spotify-player-middle {
-  flex: 2;
   display: flex;
   flex-direction: column;
-  gap: 0.4em;
-  overflow-x: auto;
-  box-sizing: border-box;
-  align-self: stretch;
+  gap: 0;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
 }
 
 .spotify-player-widescreen-layout .spotify-player-playlists-wrapper {
-  flex-grow: 1;
-  position: relative;
+  min-height: 0;
 }
 
-.spotify-player-widescreen-layout .spotify-player-playlist-container {
-  display: grid;
-  grid-template-rows: repeat(2, minmax(50px, auto));
-  grid-auto-flow: column;
-  gap: 1em;
-  padding: 0.5em;
-  overflow: visible;
+/* Kiosk footer: everything shrinks to fit, no overflow */
+.kiosk .spotify-player-footer {
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.kiosk .spotify-player-footer > * {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.kiosk .spotify-player-footer .spotify-player-control-button {
+  min-width: 0;
+  min-height: 0;
+}
+
+.kiosk .spotify-player-footer .spotify-player-toggle-container {
+  width: auto;
+  min-width: 0;
+}
+
+.kiosk .spotify-player-footer .spotify-player-seek-container span,
+.kiosk .spotify-player-footer .spotify-player-volume-control span {
+  width: auto;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+/* Kiosk widescreen: equal split for album art and content */
+.kiosk.spotify-player-widescreen-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
 }

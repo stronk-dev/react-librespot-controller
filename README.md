@@ -6,87 +6,133 @@
 [![GitHub License](https://img.shields.io/github/license/stronk-dev/react-librespot-controller)](https://github.com/stronk-dev/react-librespot-controller/blob/master/LICENSE)
 [![Dependabot Updates](https://github.com/stronk-dev/react-librespot-controller/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/stronk-dev/react-librespot-controller/actions/workflows/dependabot/dependabot-updates)
 
-> [`go-librespot`](https://github.com/devgianlu/go-librespot) squeezebox-alike web frontend for small touchscreens
+A squeezebox-alike React frontend for controlling [`go-librespot`](https://github.com/devgianlu/go-librespot).
 
-Can be deployed standalone or imported as a NPM module.
+Use it as:
+- a standalone page for touchscreens
+- an embedded component in internal dashboards
 
-The player is styled in the [Tokyo Night](https://github.com/tokyo-night/tokyo-night-vscode-theme) colour scheme except for the album image, which emits an ambilight effect based on the colours in the image.
+## UI Scope
+- Layout modes: `auto`, `default`, `widescreen`, `portrait`
+- Views: `Info`, `Playlists`, `Queue`, `Settings`
+- Interactive album art card: tap to browse the current album, playlist, or show
+- In-app navigation from now playing metadata to album, artist, and show details
+- Browse playlists: view tracks with lazy-loaded metadata, play individual tracks
+- Browse artists: portrait image, biography, top tracks, albums, singles, related artists
+- Browse albums: tracklist with durations, explicit badges, clickable artist links
+- Browse shows: episodes with durations and publish dates
+- Playlist cards with cover art, name, description, owner, track count
+- Paginated playlist loading with infinite scroll
+- Client-side image URL normalization for Spotify CDN compatibility
+- Comes with a set of preset themes and sleep timer
+- Podcast controls include skip back 15s and skip forward 30s
 
-## Install `go-librespot`
-TODO: refer to OG source instructions + explain `systemd` script
-```
-[Unit]
-Description=Spotify daemon
-Documentation=https://github.com/devgianlu/go-librespot
-Wants=sound.target
-After=sound.target
-Wants=network-online.target
-After=network-online.target
+## Backend Requirements
+This UI needs a [`go-librespot`](https://github.com/devgianlu/go-librespot) instance with:
+- HTTP API: player controls, metadata endpoints (`/metadata/rootlist`, `/metadata/playlist/{id}`, `/metadata/track/{id}`, `/metadata/album/{id}`, `/metadata/artist/{id}`, `/metadata/show/{id}`, `/metadata/episode/{id}`)
+- WebSocket event stream at `/events`
+- All metadata is fetched via Spotify's native Mercury/protobuf protocols (no Spotify Web API keys needed)
 
-[Service]
-WorkingDirectory=/home/pulseaudio/go-librespot
-ExecStart=/usr/local/go/bin/go run /home/pulseaudio/go-librespot/cmd/daemon
-Restart=always
-RestartSec=12
+## Standalone Setup
+Create a `.env` file:
 
-[Install]
-WantedBy=default.target
-```
-
-## Config `go-librespot`
-TODO: instructions to enable the API
-
-Make sure to mention the bind address.
-
-## Standalone
-
-Create a `.env` file and fill in you API endpoints
-```
+```env
 REACT_APP_API_BASE_URL=http://apollo:3678
 REACT_APP_WS_URL=ws://apollo:3678/events
+REACT_APP_KIOSK_MODE=false
+REACT_APP_HIDE_ON_DISCONNECT=false
+REACT_APP_LAYOUT=auto
 ```
 
-Run `npm run test` for local debugging.
-Run `npm run static` to generate the build folder.
+Install and run:
 
-TODO: build instructions
-
-TODO: nginx instructions. Include HTTPS instructions with local IP whitelist (+hairpin nat)
-
-TODO: OS instructions (auto-login, open browser, etc)
-
-
-## Module
-
-First install the dependency:
-```
-npm install --save `@stronk-tech/react-librespot-controller`
+```bash
+npm install
+npm run test
+npm run static
+npm run build
 ```
 
-Then import the component and fill in your API endpoints:
+Commands:
+- `npm run test`: starts the local demo app
+- `npm run static`: creates the static app build
+- `npm run build`: builds the npm package output in `dist/`
+
+## Module Setup
+Install:
+
+```bash
+npm install --save @stronk-tech/react-librespot-controller
 ```
+
+Use:
+
+```jsx
 import MediaPlayer from "@stronk-tech/react-librespot-controller";
-<MediaPlayer websocketUrl={"ws://apollo:3678/events"} apiBaseUrl={"http://apollo:3678"} hideOnDisconnect={false} />
+
+<MediaPlayer
+  websocketUrl="ws://apollo:3678/events"
+  apiBaseUrl="http://apollo:3678"
+  hideOnDisconnect={false}
+  kioskMode={false}
+  layout="auto"
+  maxHeight="70vh"
+  mobileBreakpoint={768}
+  theme="tokyo-night"
+/>;
+```
+
+### Embedding
+
+The player sizes itself automatically via CSS `aspect-ratio`. Height is derived from available width per layout mode — tab content scrolls internally and never resizes the outer card.
+
+```jsx
+<div style={{ width: "100%", overflow: "hidden" }}>
+  <MediaPlayer websocketUrl="ws://apollo:3678/events" apiBaseUrl="http://apollo:3678" />
+</div>
+```
+
+Override the max-height cap or panel scroll height with CSS vars:
+
+```css
+.my-wrapper {
+  --spotify-player-max-height: 70vh;
+  --spotify-player-panel-max-height: 48vh;
+}
 ```
 
 ### Props
+- `websocketUrl`: WebSocket URL for `go-librespot` events
+- `apiBaseUrl`: HTTP API base URL for `go-librespot`
+- `hideOnDisconnect`: hides the component when API connection is down
+- `kioskMode`: uses full-screen behavior
+- `autoDetectKiosk`: auto-enables kiosk mode when card fills most of viewport (default `false`)
+- `layout`: `auto`, `default`, `widescreen`, `portrait`
+- `maxHeight`: maximum component height cap (CSS value, default `100vh`)
+- `panelMaxHeight`: maximum height for scrollable content panels like playlists/details (default `60vh`)
+- `mobileBreakpoint`: when `layout="auto"`, force portrait at or below this viewport width (default `768`)
+- `theme`: optional preset name; if omitted, saved theme is used, default is `tokyo-night`
 
-- `hideOnDisconnect`: When `true`, the entire component will hide itself when there is no connection to the API endpoint. Otherwise it will display an error state.
-- `websocketUrl`: Full URL to the WebSocket endpoint of the `go-librespot` client.
-- `apiBaseUrl`: Full URL to the HTTP API endpoint of the `go-librespot` client.
-- `kioskMode`: When `true`, the component will fill the entire screen. Otherwise it will fill the available width and base the layout on the width only. It is recommended to leave this option `false` when importing the module into an existing webpage and to `true` when you are running the player standalone on a touch screen.
-- `layout`: Can be `auto`, `default`, `widescreen`, `portrait`. See the screenshots for how the layouts look like.
+### Theme Presets
+`tokyo-night`, `tokyo-night-light`, `dracula`, `nord`, `catppuccin`, `catppuccin-light`, `gruvbox`, `gruvbox-light`, `one-dark`, `github-dark`, `rose-pine`, `solarized`, `solarized-light`, `ayu-mirage`
 
-# Screen shots
-The player arranges itself based on the screen dimensions, with three possible layouts:
+### Preview
+![Browse Flow](screenshots/browse-flow.gif)
 
-### Default layout
-![Default](screenshots/default.png)
+### Default view / Kiosk mode
+![Default](screenshots/default-info.png)
 
 ### Widescreen
-![Wide1](screenshots/widescreen.png)
-![Wide2](screenshots/widescreen_lib.png)
-![Wide3](screenshots/widescreen_library.png)
+![Widescreen](screenshots/widescreen-info.png)
 
-### Portrait 
-![Portrait](screenshots/portrait.png)
+### Portrait
+![Portrait](screenshots/portrait-info.png)
+
+### Queue
+![Queue](screenshots/queue-tab.png)
+
+### Settings
+![Settings](screenshots/settings-tab.png)
+
+### Browse
+![Browse Artist](screenshots/browse-artist.png)

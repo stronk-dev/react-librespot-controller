@@ -3,15 +3,47 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.8em;
+  flex-wrap: wrap;
+  row-gap: 0.5em;
   width: 100%;
 }
 
 /* Tabs */
 .spotify-player-tabs {
   display: flex;
-  gap: 1em;
+  gap: 0.5em;
   justify-content: center;
+  flex: 1 1 auto;
+}
+
+.spotify-player-default-layout .spotify-player-tabs,
+.spotify-player-widescreen-layout .spotify-player-tabs {
+  margin-left: 0.5em;
+}
+
+.spotify-player-portrait-layout .spotify-player-header {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.spotify-player-portrait-layout .spotify-player-tabs {
+  justify-content: space-evenly;
+}
+
+/* Active indicator on settings tab when sleep timer is running */
+.spotify-player-tab-badge {
+  position: relative;
+}
+
+.spotify-player-tab-badge::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
 }
 
 .spotify-player-tab {
@@ -23,9 +55,11 @@
   font-size: 1rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5em;
   transition: all 0.2s ease-in-out;
   cursor: pointer;
+  flex: 1;
 }
 
 .spotify-player-tab:hover {
@@ -45,18 +79,62 @@
   font-weight: bold;
 }
 
+.spotify-player-back-button {
+  background: none;
+  border: 1px solid var(--grey);
+  color: var(--lightest);
+  cursor: pointer;
+  height: 2em;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease, margin 0.2s ease;
+}
+
+.spotify-player-back-visible {
+  width: 2em;
+  opacity: 1;
+  transform: translateX(0);
+  margin-right: 0.5em;
+}
+
+.spotify-player-back-hidden {
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border-color: transparent;
+  pointer-events: none;
+  transform: translateX(-0.5em);
+  margin: 0;
+  padding: 0;
+}
+
+.spotify-player-back-button:hover {
+  background-color: var(--accent-color);
+  color: var(--darkest);
+  transition: background-color 0.15s ease, color 0.15s ease, width 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
 .spotify-player-device-title {
   display: flex;
   align-items: center;
   gap: 1em;
   text-align: center;
   background-color: var(--dark);
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   justify-content: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   padding: 0.4em;
   border-radius: 0.2em;
+  overflow: hidden;
 }
+
 
 /* Title device name styling */
 

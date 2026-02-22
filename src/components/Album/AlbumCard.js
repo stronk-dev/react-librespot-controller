@@ -1,6 +1,6 @@
 // Component to render a nice album cover.
 import React, { useEffect, useState, useRef } from 'react';
-import PlaceholderAlbum from "./PlaceHolderAlbum";
+import PlaceholderAlbum from "./PlaceHolderAlbum.js";
 import './AlbumCard.css';
 
 const rotationUpdateInterval = 300; // Milliseconds between each gradient rotation update
@@ -10,7 +10,7 @@ const colorThreshold = 50; // Granularity for album color retrieval - Higher == 
 // TODO: add more comments, IE for props
 // TODO: should we make the gradient spin faster? Maybe a full revolution over the course of a song?
 // TODO: should we make it look more like a record player?
-const AlbumCard = ({ title, subtitle, image, isStopped }) => {
+const AlbumCard = ({ title, subtitle, image, isStopped, onClick }) => {
   const [loaded, setLoaded] = useState(false); //< Whether the album image is loaded - fades in the image once loaded
   const [gradient, setGradient] = useState(''); //< Holds the gradient CSS style (excluding rotation)
   const canvasRef = useRef(); //< Canvas ref used to extract dominant colors from the album image
@@ -93,7 +93,12 @@ const AlbumCard = ({ title, subtitle, image, isStopped }) => {
   return (
     <div
       className={"spotify-player-album-card-wrapper"}
-      style={{ '--gradient-border': rotatingGradient, opacity: loaded || isStopped ? 1 : 0 }}
+      style={{
+        '--gradient-border': rotatingGradient,
+        opacity: loaded || isStopped ? 1 : 0,
+        cursor: onClick ? 'pointer' : undefined,
+      }}
+      onClick={onClick}
     >
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
       {

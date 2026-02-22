@@ -34,11 +34,30 @@ export default {
     peerDepsExternal(),
     replace({
       preventAssignment: true,
-      'process.env.REACT_APP_WEBSOCKET_URL': JSON.stringify(
-        process.env.REACT_APP_WEBSOCKET_URL || ''
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+      'process.env.REACT_APP_WS_URL': JSON.stringify(
+        process.env.REACT_APP_WS_URL || ''
       ),
       'process.env.REACT_APP_API_BASE_URL': JSON.stringify(
         process.env.REACT_APP_API_BASE_URL || ''
+      ),
+      'process.env.REACT_APP_KIOSK_MODE': JSON.stringify(
+        process.env.REACT_APP_KIOSK_MODE || ''
+      ),
+      'process.env.REACT_APP_HIDE_ON_DISCONNECT': JSON.stringify(
+        process.env.REACT_APP_HIDE_ON_DISCONNECT || ''
+      ),
+      'process.env.REACT_APP_LAYOUT': JSON.stringify(
+        process.env.REACT_APP_LAYOUT || ''
+      ),
+      'process.env.REACT_APP_MAX_HEIGHT': JSON.stringify(
+        process.env.REACT_APP_MAX_HEIGHT || ''
+      ),
+      'process.env.REACT_APP_PANEL_MAX_HEIGHT': JSON.stringify(
+        process.env.REACT_APP_PANEL_MAX_HEIGHT || ''
+      ),
+      'process.env.REACT_APP_MOBILE_BREAKPOINT': JSON.stringify(
+        process.env.REACT_APP_MOBILE_BREAKPOINT || ''
       ),
     }),
     // Convert CommonJS modules to ES6
